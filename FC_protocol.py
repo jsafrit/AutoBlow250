@@ -57,8 +57,8 @@ def wrap_packet(block=b''):
     print(hex_dump(footer))
     # print('0x{:04x}'.format(packet_checksum))
     full_packet = header + footer
-    print(hex_dump(full_packet))
+    return full_packet
 
 
 if __name__ == '__main__':
-    wrap_packet()
+    print(hex_dump(wrap_packet()))
