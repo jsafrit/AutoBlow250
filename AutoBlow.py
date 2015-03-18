@@ -3,7 +3,7 @@ import time
 from FC_protocol import wrap_packet
 
 # Handset Status Packet Blocks
-PKT_PREAMBLE = slice(None, 21)
+PKT_PREAMBLE = slice(0, 21)
 PREAMBLE = slice(21, 28)
 BLOCK = slice(28, -3)
 FOOTER = slice(-3, None)
@@ -30,15 +30,14 @@ def main():
     incoming_packet = my_comm.read(incoming_bytes)
     print('Packet length: {}'.format(len(incoming_packet)))
     # print(hex_dump(incoming_packet))
-    print('Packet Preamble: ', end='')
+    print('{:16}'.format('Packet Preamble:'), end='')
     print(hex_dump(incoming_packet[PKT_PREAMBLE]))
-    print('Preamble: ', end='')
+    print('{:16}'.format('Preamble: '), end='')
     print(hex_dump(incoming_packet[PREAMBLE]))
-    print('Block: ', end='')
+    print('{:16}'.format('Block: '), end='')
     print(hex_dump(incoming_packet[BLOCK]))
-    print('Footer: ', end='')
+    print('{:16}'.format('Footer: '), end='')
     print(hex_dump(incoming_packet[FOOTER]))
-
 
 
 if __name__ == '__main__':
