@@ -54,7 +54,7 @@ def wrap_packet(block=b''):
 
     packet_checksum = sum(header[1:]+block) % 0xFFFF
     footer = struct.pack('<HB', packet_checksum, ETX)
-    print(hex_dump(footer))
+    # print(hex_dump(footer))
     # print('0x{:04x}'.format(packet_checksum))
     full_packet = header + footer
     return full_packet

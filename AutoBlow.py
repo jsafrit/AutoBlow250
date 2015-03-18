@@ -2,6 +2,12 @@ import serial
 import time
 from FC_protocol import wrap_packet
 
+# Handset Status Packet Blocks
+PKT_PREAMBLE = slice(None, 21)
+PREAMBLE = slice(21, 28)
+BLOCK = slice(28, -3)
+FOOTER = slice(-3, None)
+
 
 def hex_dump(data):
     return ''.join('{:02X}'.format(x) for x in data)
@@ -22,8 +28,17 @@ def main():
         incoming_bytes = my_comm.inWaiting()
 
     incoming_packet = my_comm.read(incoming_bytes)
-    print(hex_dump(incoming_packet))
-    print(len(incoming_packet))
+    print('Packet length: {}'.format(len(incoming_packet)))
+    # print(hex_dump(incoming_packet))
+    print('Packet Preamble: ', end='')
+    print(hex_dump(incoming_packet[PKT_PREAMBLE]))
+    print('Preamble: ', end='')
+    print(hex_dump(incoming_packet[PREAMBLE]))
+    print('Block: ', end='')
+    print(hex_dump(incoming_packet[BLOCK]))
+    print('Footer: ', end='')
+    print(hex_dump(incoming_packet[FOOTER]))
+
 
 
 if __name__ == '__main__':
