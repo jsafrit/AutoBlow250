@@ -19,7 +19,9 @@ def main():
     my_comm = serial.Serial(comm, 921600, timeout=5, writeTimeout=5)
     print('Port opened: {}'.format(my_comm.isOpen()))
 
-    my_comm.write(wrap_packet())
+    out_packet = wrap_packet()
+    print('Outgoing length: {}'.format(len(out_packet)))
+    my_comm.write(out_packet)
 
     time.sleep(1)
 
