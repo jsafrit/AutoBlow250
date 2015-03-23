@@ -1,6 +1,6 @@
 import serial
 import time
-from FC_protocol import wrap_packet
+from FC_protocol import wrap_packet, command_packet, PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
@@ -19,7 +19,9 @@ def main():
     my_comm = serial.Serial(comm, 921600, timeout=5, writeTimeout=5)
     print('Port opened: {}'.format(my_comm.isOpen()))
 
-    out_packet = wrap_packet()
+    out_packet = command_packet(PRO_REL_CMD_HANDSET_POWER, 1)
+    # out_packet = command_packet(PRO_REL_CMD_CAMERA_POWER, 1)
+    # out_packet = wrap_packet()
     print('Outgoing length: {}'.format(len(out_packet)))
     my_comm.write(out_packet)
 
