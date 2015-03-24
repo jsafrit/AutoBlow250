@@ -9,21 +9,18 @@ PREAMBLE = slice(21, 28)
 BLOCK = slice(28, -3)
 FOOTER = slice(-3, None)
 
+my_comm = None
+
 
 def hex_dump(data):
     return ''.join('{:02X}'.format(x) for x in data)
 
 
-def main():
-    # print "press key"
-    comm = 'COM80'
-    my_comm = serial.Serial(comm, 921600, timeout=5, writeTimeout=5)
-    print('Port opened: {}'.format(my_comm.isOpen()))
-
+def poll():
     # out_packet = command_packet(PRO_REL_CMD_HANDSET_POWER, 1)
     # out_packet = command_packet(PRO_REL_CMD_CAMERA_POWER, 1)
     out_packet = wrap_packet()
-    print('Outgoing length: {}'.format(len(out_packet)))
+    # print('Outgoing length: {}'.format(len(out_packet)))
     my_comm.write(out_packet)
 
     time.sleep(1)
@@ -54,8 +51,20 @@ def main():
     my_date = struct.unpack('<BBBBBB', block[132:138])
     print(my_date)
 
-    for x in ['fVoltageIn', 'fIoFcCaseTemperature', 'fCurrentCellTemperatureSetpoint', 'fIoUnitCaseTemperature']:
+    for x in ['fVoltageIn', 'fIoFcCaseTemperature', 'fCurrentCellTemperatureSetpoint']:  # 'fIoUnitCaseTemperature']:
         print('{:32}   {: 0.2f}'.format(x, lookup[x]))
+
+
+def main():
+    # print "press key"
+    comm = 'COM80'
+    global my_comm
+    my_comm = serial.Serial(comm, 921600, timeout=5, writeTimeout=5)
+    print('Port opened: {}'.format(my_comm.isOpen()))
+    for i in range(40):
+        print('Loop {}:'.format(i))
+        poll()
+        time.sleep(4)
 
 
 if __name__ == '__main__':
