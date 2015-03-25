@@ -1,6 +1,8 @@
 import serial
 import time
 import struct
+import datetime
+import sys
 from FC_protocol import wrap_packet, command_packet, PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
 
 # Handset Status Packet Blocks
@@ -10,6 +12,7 @@ BLOCK = slice(28, -3)
 FOOTER = slice(-3, None)
 
 my_comm = None
+log = None
 
 
 def hex_dump(data):
@@ -49,22 +52,37 @@ def poll():
     lookup = dict(zip(my_labels, my_floats))
 
     my_date = struct.unpack('<BBBBBB', block[132:138])
-    print(my_date)
+    # print(my_date)
+    # print('{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()))
 
-    for x in ['fVoltageIn', 'fIoFcCaseTemperature', 'fCurrentCellTemperatureSetpoint']:  # 'fIoUnitCaseTemperature']:
-        print('{:32}   {: 0.2f}'.format(x, lookup[x]))
+    # for x in ['fVoltageIn', 'fIoFcCaseTemperature', 'fCurrentCellTemperatureSetpoint']:  # 'fIoUnitCaseTemperature']:
+    #     print('{:32}   {: 0.2f}'.format(x, lookup[x]))
+
+    line = '{0:%Y-%m-%d,%H:%M:%S},'.format(datetime.datetime.now())
+    line += '{:0.2f},'.format(lookup['fVoltageIn'])
+    line += '{:0.2f},'.format(lookup['fIoFcCaseTemperature'])
+    line += '{:0.2f}'.format(lookup['fIoUnitCaseTemperature'])
+    print(line)
+    log.write(line+'\n')
 
 
 def main():
     # print "press key"
-    comm = 'COM80'
+
+    try:
+        comm = sys.argv[1]
+    except IndexError:
+        print('Defaulting to "COM80"')
+        comm = 'COM80'
     global my_comm
+    global log
+    log = open(comm+'.csv', mode='a', buffering=1)
     my_comm = serial.Serial(comm, 921600, timeout=5, writeTimeout=5)
-    print('Port opened: {}'.format(my_comm.isOpen()))
-    for i in range(40):
-        print('Loop {}:'.format(i))
+    # print('Port opened: {}'.format(my_comm.isOpen()))
+    log.write('date,time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature\n')
+
+    while True:
         poll()
-        time.sleep(4)
 
 
 if __name__ == '__main__':
