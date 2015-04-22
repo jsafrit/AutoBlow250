@@ -3,7 +3,7 @@ import time
 import struct
 import datetime
 import sys
-from FC_protocol import wrap_packet, command_packet, PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
+from FC_protocol import wrap_packet  # , command_packet, PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
@@ -51,7 +51,7 @@ def poll():
     my_floats = struct.unpack('<fffffff', block[64:92])
     lookup = dict(zip(my_labels, my_floats))
 
-    my_date = struct.unpack('<BBBBBB', block[132:138])
+    # my_date = struct.unpack('<BBBBBB', block[132:138])
     # print(my_date)
     # print('{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()))
 
@@ -77,13 +77,16 @@ def main():
     global my_comm
     global log
     log = open(comm+'.csv', mode='a', buffering=1)
-    my_comm = serial.Serial(comm, 921600, timeout=5, writeTimeout=5)
+    my_comm = serial.Serial(comm, 921600, timeout=2, writeTimeout=2)
     # print('Port opened: {}'.format(my_comm.isOpen()))
     log.write('date,time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature\n')
 
-    while True:
-        poll()
-
+    try:
+        while True:
+            poll()
+    except KeyboardInterrupt:
+        print('Closing log files and exiting.')
+        log.close()
 
 if __name__ == '__main__':
     main()
