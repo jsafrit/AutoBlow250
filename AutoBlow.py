@@ -58,7 +58,7 @@ def poll():
     # for x in ['fVoltageIn', 'fIoFcCaseTemperature', 'fCurrentCellTemperatureSetpoint']:  # 'fIoUnitCaseTemperature']:
     #     print('{:32}   {: 0.2f}'.format(x, lookup[x]))
 
-    line = '{0:%Y-%m-%d,%H:%M:%S},'.format(datetime.datetime.now())
+    line = '{0:%H:%M:%S},'.format(datetime.datetime.now())
     line += '{:0.2f},'.format(lookup['fVoltageIn'])
     line += '{:0.2f},'.format(lookup['fIoFcCaseTemperature'])
     line += '{:0.2f}'.format(lookup['fIoUnitCaseTemperature'])
@@ -79,7 +79,7 @@ def main():
     log = open(comm+'.csv', mode='a', buffering=1)
     my_comm = serial.Serial(comm, 921600, timeout=2, writeTimeout=2)
     # print('Port opened: {}'.format(my_comm.isOpen()))
-    log.write('date,time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature\n')
+    log.write('time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature\n')
 
     try:
         while True:
