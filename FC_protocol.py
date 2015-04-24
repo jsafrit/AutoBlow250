@@ -248,3 +248,4 @@ def wrap_packet(block=b''):
 if __name__ == '__main__':
     print(hex_dump(wrap_packet()))
     print(hex_dump(command_packet(PRO_REL_CMD_HANDSET_POWER)))
+    print(hex_dump(command_packet(PRO_CMD_DO_HUMAN_ALCOHOL_TEST)))

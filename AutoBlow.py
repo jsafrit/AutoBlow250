@@ -4,7 +4,7 @@ import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
-from FC_protocol import wrap_packet  # , command_packet, PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
+from FC_protocol import wrap_packet, command_packet, PRO_CMD_DO_HUMAN_ALCOHOL_TEST, PRO_CMD_SLEEP     # PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
@@ -64,7 +64,7 @@ def poll():
     line += '{:0.2f},'.format(lookup['fIoFcCaseTemperature'])
     line += '{:0.2f}'.format(lookup['fIoUnitCaseTemperature'])
     print(line)
-    log.write(line+'\n')
+    print(line, file=log)
 
 
 def closeout():
@@ -75,6 +75,10 @@ def closeout():
 
 
 def main():
+
+    do_alcohol_test = command_packet(PRO_CMD_DO_HUMAN_ALCOHOL_TEST)
+    go_to_sleep = command_packet(PRO_CMD_SLEEP)
+
     try:
         comm = sys.argv[1]
     except IndexError:
@@ -84,17 +88,29 @@ def main():
     global log
     log = open(comm+'.csv', mode='a', buffering=1)
     my_comm = serial.Serial(comm, 921600, timeout=2, writeTimeout=2)
-    # print('Port opened: {}'.format(my_comm.isOpen()))
-    log.write('time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature\n')
+
+    print('time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature', file=log)
 
     try:
         while True:
             if kbhit():
                 my_key = ord(getch())
-                if my_key == 27:        # <escape>
-                    print("Boo!")
+                if my_key == 0 or my_key == 224:        # a special function key
+                    # so get the next code
+                    my_key = ord(getch())
+                    print("+:{}:+".format(my_key))
+                elif my_key == 27:      # <escape>
+                    print('Boo!')
                 elif my_key == 120:     # 'x'
                     closeout()
+                elif my_key == 97:      # 'a'
+                    my_comm.write(do_alcohol_test)
+                    print('Alcohol Test Requested...')
+                    print('## Alcohol Test Requested', file=log)
+                elif my_key == 115:      # 's'
+                    my_comm.write(go_to_sleep)
+                    print('Handset Sleep Requested...')
+                    print('## Handset Sleep Requested', file=log)
                 else:
                     print("::{}::".format(my_key))
             poll()
