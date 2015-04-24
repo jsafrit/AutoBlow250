@@ -3,6 +3,7 @@ import time
 import struct
 import datetime
 import sys
+from msvcrt import getch, kbhit
 from FC_protocol import wrap_packet  # , command_packet, PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
 
 # Handset Status Packet Blocks
@@ -66,9 +67,14 @@ def poll():
     log.write(line+'\n')
 
 
-def main():
-    # print "press key"
+def closeout():
+    global log
+    print('Closing log files and exiting.')
+    log.close()
+    sys.exit(1)
 
+
+def main():
     try:
         comm = sys.argv[1]
     except IndexError:
@@ -83,10 +89,17 @@ def main():
 
     try:
         while True:
+            if kbhit():
+                my_key = ord(getch())
+                if my_key == 27:        # <escape>
+                    print("Boo!")
+                elif my_key == 120:     # 'x'
+                    closeout()
+                else:
+                    print("::{}::".format(my_key))
             poll()
     except KeyboardInterrupt:
-        print('Closing log files and exiting.')
-        log.close()
+        closeout()
 
 if __name__ == '__main__':
     main()
