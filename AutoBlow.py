@@ -94,7 +94,13 @@ def main():
     global my_comm
     global log
     log = open(comm+'.csv', mode='a', buffering=1)
-    my_comm = serial.Serial(comm, 921600, timeout=2, writeTimeout=2)
+
+    try:
+        my_comm = serial.Serial(comm, 921600, timeout=2, writeTimeout=2)
+    except serial.SerialException:
+        print('BOOM! @ %s' % comm)
+        print(str(sys.exc_info()[1]).split(':')[0])
+        sys.exit(2)
 
     print('time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature', file=log)
 
