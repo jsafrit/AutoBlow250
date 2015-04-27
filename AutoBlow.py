@@ -4,7 +4,7 @@ import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
-from FC_protocol import wrap_packet, command_packet, PRO_CMD_DO_HUMAN_ALCOHOL_TEST, PRO_CMD_SLEEP     # PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
+from FC_protocol import wrap_packet, command_packet, HandsetState, HandsetBasicState, PRO_CMD_DO_HUMAN_ALCOHOL_TEST, PRO_CMD_SLEEP     # PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
@@ -52,6 +52,12 @@ def poll():
     my_floats = struct.unpack('<fffffff', block[64:92])
     lookup = dict(zip(my_labels, my_floats))
 
+
+    my_labels2 = ('uiTestActive', 'ucStaState', 'ucBasicState', 'ucStaHeaterState', 'ucUtlCellHeatLevel',
+                  'ucClstStatus')
+    my_data = struct.unpack('<LBBBBB', block[55:64])
+    lookup2 = dict(zip(my_labels2, my_data))
+
     # my_date = struct.unpack('<BBBBBB', block[132:138])
     # print(my_date)
     # print('{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()))
@@ -65,6 +71,7 @@ def poll():
     line += '{:0.2f}'.format(lookup['fIoUnitCaseTemperature'])
     print(line)
     print(line, file=log)
+    print(HandsetState(lookup2['ucStaState']).name, HandsetBasicState(lookup2['ucBasicState']).name)
 
 
 def closeout():
