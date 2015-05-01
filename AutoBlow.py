@@ -70,7 +70,11 @@ def poll():
     line += '{:0.2f}'.format(lookup['fIoUnitCaseTemperature'])
     print(line)
     print(line, file=log)
-    print(HandsetState(lookup2['ucStaState']).name, HandsetBasicState(lookup2['ucBasicState']).name)
+
+    if verbose:
+        hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
+        print('Serial Number: {} (0x{:08X})'.format(hs_serial, hs_serial), end='')
+        print(' State:', HandsetState(lookup2['ucStaState']).name, HandsetBasicState(lookup2['ucBasicState']).name)
 
 
 def closeout():
@@ -91,8 +95,10 @@ def main():
         print('Defaulting to "COM80"')
         comm = 'COM80'
     global my_comm
+    global verbose
     global log
     log = open(comm+'.csv', mode='a', buffering=1)
+    verbose = False
 
     try:
         my_comm = serial.Serial(comm, 921600, timeout=2, writeTimeout=2)
@@ -115,6 +121,8 @@ def main():
                     print('Boo!')
                 elif my_key == 120:     # 'x'
                     closeout()
+                elif my_key == 118:     # 'v'
+                    verbose = not verbose
                 elif my_key == 97:      # 'a'
                     my_comm.write(do_alcohol_test)
                     print('Alcohol Test Requested...')
