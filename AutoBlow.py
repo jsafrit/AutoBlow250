@@ -4,7 +4,7 @@ import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
-from FC_protocol import wrap_packet, command_packet, HandsetState, HandsetBasicState, ProCommands 
+from FC_protocol import wrap_packet, command_packet, HandsetState, HandsetBasicState, ProCommands
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
@@ -51,7 +51,6 @@ def poll():
                  'fIoUnitCaseTemperature', 'fCurrentCellTemperatureSetpoint', 'fUtlRegulationTemperature')
     my_floats = struct.unpack('<fffffff', block[64:92])
     lookup = dict(zip(my_labels, my_floats))
-
 
     my_labels2 = ('uiTestActive', 'ucStaState', 'ucBasicState', 'ucStaHeaterState', 'ucUtlCellHeatLevel',
                   'ucClstStatus')

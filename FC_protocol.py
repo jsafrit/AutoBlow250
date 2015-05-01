@@ -6,23 +6,25 @@ STX = 2
 ETX = 3
 PACKET_MAGIC_NUMBER = 0xC613
 
+
 # packet types
-PRO_PKT_TYPE_HANDSET_STATUS = 3
-PRO_PKT_TYPE_HANDSET_CALIBRATION = 4
-PRO_PKT_TYPE_RELAY_STATUS = 5
-PRO_PKT_TYPE_FACTORY = 6
-PRO_PKT_TYPE_HANDSET_OPTIONS = 7
-PRO_PKT_TYPE_RELAY_OPTION = 8
-PRO_PKT_TYPE_USER = 9
-PRO_PKT_TYPE_SERVICE = 10
-PRO_PKT_TYPE_HANDSET_INSTALL = 11
-PRO_PKT_TYPE_COMMAND = 12
-PRO_PKT_TYPE_RELAY_COMMAND = 13
-PRO_PKT_TYPE_EVENT_LOG_MASTER = 14
-PRO_PKT_TYPE_EVT_LOG_DATA = 15
-PRO_PKT_TYPE_HANDSET_ENGINEERING = 16
-PRO_PKT_TYPE_SERVICE_PROVIDER = 17
-PRO_PKT_TYPE_SLAVE_SPEAK = 18
+class PacketType(IntEnum):
+    PRO_PKT_TYPE_HANDSET_STATUS = 3
+    PRO_PKT_TYPE_HANDSET_CALIBRATION = 4
+    PRO_PKT_TYPE_RELAY_STATUS = 5
+    PRO_PKT_TYPE_FACTORY = 6
+    PRO_PKT_TYPE_HANDSET_OPTIONS = 7
+    PRO_PKT_TYPE_RELAY_OPTION = 8
+    PRO_PKT_TYPE_USER = 9
+    PRO_PKT_TYPE_SERVICE = 10
+    PRO_PKT_TYPE_HANDSET_INSTALL = 11
+    PRO_PKT_TYPE_COMMAND = 12
+    PRO_PKT_TYPE_RELAY_COMMAND = 13
+    PRO_PKT_TYPE_EVENT_LOG_MASTER = 14
+    PRO_PKT_TYPE_EVT_LOG_DATA = 15
+    PRO_PKT_TYPE_HANDSET_ENGINEERING = 16
+    PRO_PKT_TYPE_SERVICE_PROVIDER = 17
+    PRO_PKT_TYPE_SLAVE_SPEAK = 18
 
 
 # PRO_DEVICE_TYPE
@@ -360,25 +362,27 @@ def hex_dump(data):
 
 
 def command_packet(command, detail1=0, detail2=0, detail3=0):
-    header = struct.pack('<BHB BLBL BHHH', STX, PACKET_MAGIC_NUMBER, PRO_PKT_TYPE_COMMAND,
-                         DeviceType.PRO_FC250_RELAY_DEVICE, 0x01234567, DeviceType.PRO_FC250_HANDSET_DEVICE, 0x0,
+    header = struct.pack('<BHB BL BL BHHH',
+                         STX, PACKET_MAGIC_NUMBER, PacketType.PRO_PKT_TYPE_COMMAND,
+                         DeviceType.PRO_FC250_RELAY_DEVICE, 0x01234567,
+                         DeviceType.PRO_FC250_HANDSET_DEVICE, 0x0,
                          0x0, 1080, 0x0, 23)
-    preamble = struct.pack('<LBH', 0, 0, 23)
 
-    # add block here
-    block = struct.pack('<LLLL', command, detail1, detail2, detail3)
+    block_preamble = struct.pack('<LBH', 0, 0, 23)
+    block = block_preamble + struct.pack('<LLLL', command, detail1, detail2, detail3)
 
-    packet_checksum = sum(header[1:] + preamble + block) % 0xFFFF
+    packet_checksum = sum(header[1:] + block) % 0xFFFF
     footer = struct.pack('<HB', packet_checksum, ETX)
-    # print(hex_dump(footer))
-    # print('0x{:04x}'.format(packet_checksum))
-    full_packet = header + preamble + block + footer
+
+    full_packet = header + block + footer
     return full_packet
 
 
 def wrap_packet(block=b''):
-    header = struct.pack('<BHB BLBL BHHH', STX, PACKET_MAGIC_NUMBER, PRO_PKT_TYPE_SLAVE_SPEAK,
-                         DeviceType.PRO_PC_DEVICE, 0x01234567, DeviceType.PRO_FC250_HANDSET_DEVICE, 0x0,
+    header = struct.pack('<BHB BL BL BHHH',
+                         STX, PACKET_MAGIC_NUMBER, PacketType.PRO_PKT_TYPE_SLAVE_SPEAK,
+                         DeviceType.PRO_PC_DEVICE, 0x01234567,
+                         DeviceType.PRO_FC250_HANDSET_DEVICE, 0x0,
                          0x0, 1080, 0x0, 0x0)
     # add block here
 
