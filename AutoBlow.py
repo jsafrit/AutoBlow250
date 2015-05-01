@@ -4,7 +4,7 @@ import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
-from FC_protocol import wrap_packet, command_packet, HandsetState, HandsetBasicState, PRO_CMD_DO_HUMAN_ALCOHOL_TEST, PRO_CMD_SLEEP     # PRO_REL_CMD_HANDSET_POWER, PRO_REL_CMD_CAMERA_POWER
+from FC_protocol import wrap_packet, command_packet, HandsetState, HandsetBasicState, ProCommands 
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
@@ -21,8 +21,8 @@ def hex_dump(data):
 
 
 def poll():
-    # out_packet = command_packet(PRO_REL_CMD_HANDSET_POWER, 1)
-    # out_packet = command_packet(PRO_REL_CMD_CAMERA_POWER, 1)
+    # out_packet = command_packet(ProCommands.PRO_REL_CMD_HANDSET_POWER, 1)
+    # out_packet = command_packet(ProCommands.PRO_REL_CMD_CAMERA_POWER, 1)
     out_packet = wrap_packet()
     # print('Outgoing length: {}'.format(len(out_packet)))
     my_comm.write(out_packet)
@@ -83,8 +83,8 @@ def closeout():
 
 def main():
 
-    do_alcohol_test = command_packet(PRO_CMD_DO_HUMAN_ALCOHOL_TEST)
-    go_to_sleep = command_packet(PRO_CMD_SLEEP)
+    do_alcohol_test = command_packet(ProCommands.PRO_CMD_DO_HUMAN_ALCOHOL_TEST)
+    go_to_sleep = command_packet(ProCommands.PRO_CMD_SLEEP)
 
     try:
         comm = sys.argv[1]
