@@ -4,13 +4,15 @@ import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
-from FC_protocol import wrap_packet, command_packet, HandsetState, HandsetBasicState, ProCommands
+from FC_protocol import wrap_packet, command_packet, HandsetState, ProCommands, STX, PACKET_MAGIC_NUMBER, PacketType
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
 PREAMBLE = slice(21, 28)
 BLOCK = slice(28, -3)
 FOOTER = slice(-3, None)
+
+hs_status_id = struct.pack('<BHB', STX, PACKET_MAGIC_NUMBER, PacketType.PRO_PKT_TYPE_HANDSET_STATUS)
 
 my_comm = None
 log = None
@@ -45,6 +47,11 @@ def poll():
     # print('{:16}'.format('Footer: '), end='')
     # print(hex_dump(incoming_packet[FOOTER]))
 
+    # Verify this is a handset status packet
+    pkt_preamble = incoming_packet[PKT_PREAMBLE]
+    if pkt_preamble[:4] != hs_status_id:
+        return
+
     block = incoming_packet[BLOCK]
 
     my_labels = ('fVoltageIn', 'fLithiumBatteryVoltage', 'fIoFcCaseTemperature', 'fIoBreathTemperature',
@@ -64,17 +71,20 @@ def poll():
     # for x in ['fVoltageIn', 'fIoFcCaseTemperature', 'fCurrentCellTemperatureSetpoint']:  # 'fIoUnitCaseTemperature']:
     #     print('{:32}   {: 0.2f}'.format(x, lookup[x]))
 
+    hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
+
     line = '{0:%H:%M:%S},'.format(datetime.datetime.now())
     line += '{:0.2f},'.format(lookup['fVoltageIn'])
     line += '{:0.2f},'.format(lookup['fIoFcCaseTemperature'])
-    line += '{:0.2f}'.format(lookup['fIoUnitCaseTemperature'])
+    line += '{:0.2f},'.format(lookup['fIoUnitCaseTemperature'])
+    line += '0x{:08X},'.format(hs_serial)
+    line += '{}'.format(HandsetState(lookup2['ucStaState']).name)
     print(line)
     print(line, file=log)
 
-    if verbose:
-        hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
-        print('Serial Number: {} (0x{:08X})'.format(hs_serial, hs_serial), end='')
-        print(' State:', HandsetState(lookup2['ucStaState']).name, HandsetBasicState(lookup2['ucBasicState']).name)
+    # if verbose:
+    #     print('Serial Number: {} (0x{:08X})'.format(hs_serial, hs_serial), end='')
+    #     print(' State:', HandsetState(lookup2['ucStaState']).name, HandsetBasicState(lookup2['ucBasicState']).name)
 
 
 def closeout():
@@ -92,8 +102,8 @@ def main():
     try:
         comm = sys.argv[1]
     except IndexError:
-        print('Defaulting to "COM80"')
-        comm = 'COM80'
+        print('Defaulting to "COM96"')
+        comm = 'COM96'
     global my_comm
     global verbose
     global log
@@ -107,7 +117,7 @@ def main():
         print(str(sys.exc_info()[1]).split(':')[0])
         sys.exit(2)
 
-    print('time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature', file=log)
+    print('time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState', file=log)
 
     try:
         while True:
@@ -121,8 +131,8 @@ def main():
                     print('Boo!')
                 elif my_key == 120:     # 'x'
                     closeout()
-                elif my_key == 118:     # 'v'
-                    verbose = not verbose
+                # elif my_key == 118:     # 'v'
+                #     verbose = not verbose
                 elif my_key == 97:      # 'a'
                     my_comm.write(do_alcohol_test)
                     print('Alcohol Test Requested...')
