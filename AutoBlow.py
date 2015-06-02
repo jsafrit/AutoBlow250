@@ -4,7 +4,8 @@ import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
-from FC_protocol import wrap_packet, command_packet, HandsetState, HeaterState, CellHeatLevel, ProCommands, STX, PACKET_MAGIC_NUMBER, PacketType
+from FC_protocol import wrap_packet, command_packet, HandsetState, HeaterState, CellHeatLevel, ProCommands, PacketType,\
+    STX, PACKET_MAGIC_NUMBER
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
