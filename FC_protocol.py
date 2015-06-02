@@ -356,6 +356,22 @@ class HandsetBasicState(IntEnum):
     PRO_HS_BASIC_STATE_DIAGNOSTIC = 9
 
 
+# handset cell heat level state table
+class CellHeatLevel(IntEnum):
+    CELL_HEAT_LEVEL_OFF = 0
+    CELL_HEAT_LEVEL_LOW = 1
+    CELL_HEAT_LEVEL_ON = 2
+
+
+# handset heater state table
+class HeaterState(IntEnum):
+    STA_HEAT_FLOATING = 0
+    STA_HEAT_DYNAMIC_WARMING = 1
+    STA_HEAT_MIGRATION_REGULATION = 2
+    STA_HEAT_STABLE_REGULATION = 3
+    STA_HEAT_DIAGNOSTICS = 4
+
+
 def hex_dump(data):
     # return str.encode(data)
     return ' '.join('{:02x}'.format(x) for x in data)

@@ -4,7 +4,7 @@ import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
-from FC_protocol import wrap_packet, command_packet, HandsetState, ProCommands, STX, PACKET_MAGIC_NUMBER, PacketType
+from FC_protocol import wrap_packet, command_packet, HandsetState, HeaterState, CellHeatLevel, ProCommands, STX, PACKET_MAGIC_NUMBER, PacketType
 
 # Handset Status Packet Blocks
 PKT_PREAMBLE = slice(0, 21)
@@ -78,7 +78,9 @@ def poll():
     line += '{:0.2f},'.format(lookup['fIoFcCaseTemperature'])
     line += '{:0.2f},'.format(lookup['fIoUnitCaseTemperature'])
     line += '0x{:08X},'.format(hs_serial)
-    line += '{}'.format(HandsetState(lookup2['ucStaState']).name)
+    line += '{},'.format(HandsetState(lookup2['ucStaState']).name)
+    line += '{},'.format(HeaterState(lookup2['ucStaHeaterState']).name)
+    line += '{}'.format(CellHeatLevel(lookup2['ucUtlCellHeatLevel']).name)
     print(line)
     print(line, file=log)
 
