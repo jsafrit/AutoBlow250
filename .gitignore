@@ -3,4 +3,5 @@
 _src/*
 myenv/*
 *.csv
+*.log
 Results/*
