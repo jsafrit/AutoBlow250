@@ -1,11 +1,9 @@
-import serial
 import struct
 import datetime
 import sys
 from msvcrt import getch, kbhit
 from FC250 import FC250Handset
-from FC_protocol import wrap_packet, command_packet, HandsetState, HeaterState, CellHeatLevel, ProCommands, \
-    PKT_PREAMBLE, BLOCK
+from FC_protocol import HandsetState, HeaterState, CellHeatLevel, PKT_PREAMBLE, BLOCK
 
 log = None
 handset_uut = None
@@ -16,7 +14,6 @@ def hex_dump(data):
 
 
 def poll(interval=1):
-
     incoming_packet = handset_uut.cmd_get_status(interval)
     if not incoming_packet:
         return
@@ -57,14 +54,13 @@ def closeout():
 
 
 def main():
-
     global log
     global handset_uut
 
     handset_uut = FC250Handset(sys.argv[1], sys.argv[2])
     log = open(sys.argv[2]+'.csv', mode='a', buffering=1)
-
-    print('time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState', file=log)
+    legend = 'time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState,HeaterState,CellHeaterLevel'
+    print(legend, file=log)
 
     try:
         while True:
@@ -81,14 +77,15 @@ def main():
                 elif my_key == 97:      # 'a'
                     handset_uut.cmd_alcohol_test()
                     print('Alcohol Test Requested...')
-                    print('## Alcohol Test Requested', file=log)
+                    # print('## Alcohol Test Requested', file=log)
                 elif my_key == 115:      # 's'
                     handset_uut.cmd_go_sleep()
                     print('Handset Sleep Requested...')
-                    print('## Handset Sleep Requested', file=log)
+                    # print('## Handset Sleep Requested', file=log)
                 else:
                     print("::{}::".format(my_key))
             poll(1)
+
     except KeyboardInterrupt:
         closeout()
 
