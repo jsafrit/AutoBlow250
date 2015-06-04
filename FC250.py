@@ -1,10 +1,9 @@
 import serial
 import sys
 import logging
-from FC_protocol import command_packet, ProCommands
+from time import sleep
+from FC_protocol import command_packet, wrap_packet, ProCommands, PKT_PREAMBLE, hs_status_id
 
-do_alcohol_test = command_packet(ProCommands.PRO_CMD_DO_HUMAN_ALCOHOL_TEST)
-go_to_sleep = command_packet(ProCommands.PRO_CMD_SLEEP)
 
 #####################################################
 # FC250 class
@@ -25,13 +24,13 @@ class FC250Handset(object):
 
         # init logging
         logfile_name = self.name + '.log'
-        self.logging.basicConfig(format='%(asctime)s %(message)s',
+        logging.basicConfig(format='%(asctime)s %(message)s',
                                  datefmt='%Y-%m-%d %H:%M:%S',
                                  filename=logfile_name,
                                  level=logging.INFO)
 
-        self.logging.info('*** Initialization ***')
-        self.logging.info('Creating FC250 Handset object "{}" on {}'.format(self.name, self.comm))
+        logging.info('*** Initialization ***')
+        logging.info('Creating FC250 Handset object "{}" on {}'.format(self.name, self.comm))
 
         # initiate serial connection to handset
         self.s = None
@@ -39,16 +38,16 @@ class FC250Handset(object):
             self.s = serial.Serial(self.comm, 921600, timeout=2, writeTimeout=2)
         except serial.SerialException:
             error_code = str(sys.exc_info()[1]).split(':')[0]
-            self.logging.info('Error: {}'.format(error_code))
+            logging.info('Error: {}'.format(error_code))
             print(error_code)
             sys.exit(2)
 
         if not self.s or not self.s.isOpen():
-            self.logging.info('Unable to open comm port')
+            logging.info('Unable to open comm port')
             print('Could not open comm {}'.format(self.comm))
             sys.exit(2)
 
-        self.logging.info('Created FC250 Handset object "{}" on {}'.format(self.name, self.comm))
+        logging.info('Created FC250 Handset object "{}" on {}'.format(self.name, self.comm))
 
     def close(self):
         """
@@ -56,7 +55,7 @@ class FC250Handset(object):
         :rtype : None
         """
         self.s.close()
-        self.logging.info('Closing FC250 Handset object "%s" on %s', self.name, self.comm)
+        logging.info('Closing FC250 Handset object "%s" on %s', self.name, self.comm)
 
     def cmd_alcohol_test(self):
         """
@@ -64,7 +63,7 @@ class FC250Handset(object):
         :rtype : None
         """
         self.s.write(command_packet(ProCommands.PRO_CMD_DO_HUMAN_ALCOHOL_TEST))
-        self.logging.info('Alcohol Test requested')
+        logging.info('Alcohol Test requested')
 
     def cmd_go_sleep(self):
         """
@@ -72,4 +71,28 @@ class FC250Handset(object):
         :rtype : None
         """
         self.s.write(command_packet(ProCommands.PRO_CMD_SLEEP))
-        self.logging.info('Handset Sleep requested')
+        logging.info('Handset Sleep requested')
+
+    def cmd_get_status(self, interval=1):
+        """
+        Request status from the Handset
+        :param interval: time in seconds between poll
+        :rtype : None
+        """
+        sleep(interval)
+
+        self.s.write(wrap_packet())
+        logging.info('Handset Status requested')
+
+        incoming_bytes = self.s.inWaiting()
+        while not incoming_bytes:
+            incoming_bytes = self.s.inWaiting()
+
+        incoming_packet = self.s.read(incoming_bytes)
+
+        # Verify this is a handset status packet
+        pkt_preamble = incoming_packet[PKT_PREAMBLE]
+        if pkt_preamble[:4] != hs_status_id:
+            return None
+
+        return incoming_packet

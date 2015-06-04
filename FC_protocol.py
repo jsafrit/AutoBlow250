@@ -6,6 +6,13 @@ STX = 2
 ETX = 3
 PACKET_MAGIC_NUMBER = 0xC613
 
+# Handset Status Packet Blocks
+# TODO: convert to enum
+PKT_PREAMBLE = slice(0, 21)
+PREAMBLE = slice(21, 28)
+BLOCK = slice(28, -3)
+FOOTER = slice(-3, None)
+
 
 # packet types
 class PacketType(IntEnum):
@@ -408,6 +415,7 @@ def wrap_packet(block=b''):
     full_packet = header + block + footer
     return full_packet
 
+hs_status_id = struct.pack('<BHB', STX, PACKET_MAGIC_NUMBER, PacketType.PRO_PKT_TYPE_HANDSET_STATUS)
 
 if __name__ == '__main__':
     print(hex_dump(wrap_packet()))
