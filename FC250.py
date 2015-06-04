@@ -25,9 +25,9 @@ class FC250Handset(object):
         # init logging
         logfile_name = self.name + '.log'
         logging.basicConfig(format='%(asctime)s %(message)s',
-                                 datefmt='%Y-%m-%d %H:%M:%S',
-                                 filename=logfile_name,
-                                 level=logging.INFO)
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            filename=logfile_name,
+                            level=logging.INFO)
 
         logging.info('*** Initialization ***')
         logging.info('Creating FC250 Handset object "{}" on {}'.format(self.name, self.comm))
@@ -79,13 +79,17 @@ class FC250Handset(object):
         :param interval: time in seconds between poll
         :rtype : None
         """
-        sleep(interval)
 
         self.s.write(wrap_packet())
         logging.info('Handset Status requested')
 
+        sleep(interval)
+
         incoming_bytes = self.s.inWaiting()
         while not incoming_bytes:
+            logging.info('Handset Status retrying request')
+            self.s.write(wrap_packet())
+            sleep(.5)
             incoming_bytes = self.s.inWaiting()
 
         incoming_packet = self.s.read(incoming_bytes)
