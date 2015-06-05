@@ -24,7 +24,7 @@ class FC250Handset(object):
 
         # init logging
         logfile_name = self.name + '.log'
-        logging.basicConfig(format='%(asctime)s %(message)s',
+        logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',
                             filename=logfile_name,
                             level=logging.INFO)
@@ -38,12 +38,12 @@ class FC250Handset(object):
             self.s = serial.Serial(self.comm, 921600, timeout=2, writeTimeout=2)
         except serial.SerialException:
             error_code = str(sys.exc_info()[1]).split(':')[0]
-            logging.info('Error: {}'.format(error_code))
+            logging.error('Error: {}'.format(error_code))
             print(error_code)
             sys.exit(2)
 
         if not self.s or not self.s.isOpen():
-            logging.info('Unable to open comm port')
+            logging.critical('Unable to open comm port')
             print('Could not open comm {}'.format(self.comm))
             sys.exit(2)
 
@@ -56,6 +56,7 @@ class FC250Handset(object):
         """
         self.s.close()
         logging.info('Closing FC250 Handset object "%s" on %s', self.name, self.comm)
+        logging.shutdown()
 
     def cmd_alcohol_test(self):
         """
@@ -79,7 +80,6 @@ class FC250Handset(object):
         :param interval: time in seconds between poll
         :rtype : None
         """
-
         self.s.write(wrap_packet())
         logging.info('Handset Status requested')
 
@@ -87,7 +87,7 @@ class FC250Handset(object):
 
         incoming_bytes = self.s.inWaiting()
         while not incoming_bytes:
-            logging.info('Handset Status retrying request')
+            logging.warning('Handset Status retrying request')
             self.s.write(wrap_packet())
             sleep(.5)
             incoming_bytes = self.s.inWaiting()
