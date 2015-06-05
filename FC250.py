@@ -49,6 +49,12 @@ class FC250Handset(object):
 
         logging.info('Created FC250 Handset object "{}" on {}'.format(self.name, self.comm))
 
+    def __del__(self):
+        if self.s and self.s.isOpen():
+            self.s.close()
+            logging.warning('Shutting down without proper close')
+        logging.shutdown()
+
     def close(self):
         """
         Close UUT
