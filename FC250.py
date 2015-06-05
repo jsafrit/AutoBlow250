@@ -49,7 +49,7 @@ class FC250Handset(object):
             print('Could not open comm {}'.format(self.comm))
             sys.exit(2)
 
-        logging.info('Created: ' + self.__str__)
+        logging.info('Created: ' + self.__str__())
 
     def __del__(self):
         if self.s and self.s.isOpen():
@@ -58,7 +58,7 @@ class FC250Handset(object):
 
     def __str__(self):
         status = 'FC250 Handset "{name}" (S/N:{serial_number}) connected on {comm}'
-        return str(status.format(**self.__dict__))
+        return status.format(**self.__dict__)
 
     def close(self):
         """
@@ -66,7 +66,7 @@ class FC250Handset(object):
         :rtype : None
         """
         self.s.close()
-        logging.info('Closing: ' + self.__str__)
+        logging.info('Closing: ' + self.__str__())
         logging.shutdown()
 
     def cmd_alcohol_test(self):
