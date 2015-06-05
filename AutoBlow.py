@@ -7,6 +7,7 @@ from FC_protocol import HandsetState, HeaterState, CellHeatLevel, PKT_PREAMBLE, 
 
 log = None
 handset_uut = None
+paused = False
 key_help = {'a': 'Alcohol Test request',
             'r': 'Report Handset info',
             's': 'Sleep Handset',
@@ -52,6 +53,40 @@ def poll(interval=1):
     print(line, file=log)
 
 
+def handle_keystrokes():
+    global paused
+    if kbhit():
+        my_key = ord(getch())
+        if my_key == 0 or my_key == 224:        # a special function key
+            # so get the next code
+            my_key = ord(getch())
+            print("+:{}:+".format(my_key))
+        elif my_key == 63:      # '?'
+            paused = True
+            print("  Help Menu")
+            for k, v in key_help.items():
+                print('   {} : {}'.format(k, v))
+            print("  -- press 'p' to resume -- ")
+        elif my_key == 112:     # 'p'
+            if not paused:
+                print('-paused-')
+            paused = not paused
+        elif my_key == 97:      # 'a'
+            handset_uut.cmd_alcohol_test()
+            print(' Alcohol Test Requested...')
+        elif my_key == 115:      # 's'
+            handset_uut.cmd_go_sleep()
+            print(' Handset Sleep Requested...')
+        elif my_key == 114:      # 'r'
+            print(' ' + str(handset_uut))
+        elif my_key == 120:     # 'x'
+            closeout()
+        elif my_key == 27:      # <escape>
+            print('Boo!')
+        else:
+            print("::{}::".format(my_key))
+
+
 def closeout():
     # global log
     print('Closing log files and exiting.')
@@ -64,48 +99,20 @@ def main():
     global log
     global handset_uut
 
+    # initialize UUT from commandline args
     handset_uut = FC250Handset(sys.argv[1], sys.argv[2])
+
+    # setup results logging
     log = open(sys.argv[2]+'.csv', mode='a', buffering=1)
     legend = 'time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState,HeaterState,CellHeaterLevel'
     print(legend, file=log)
 
-    paused = False
     try:
         while True:
-            if kbhit():
-                my_key = ord(getch())
-                if my_key == 0 or my_key == 224:        # a special function key
-                    # so get the next code
-                    my_key = ord(getch())
-                    print("+:{}:+".format(my_key))
-                elif my_key == 63:      # '?'
-                    paused = True
-                    print("  Help Menu")
-                    for k, v in key_help.items():
-                        print('   {} : {}'.format(k, v))
-                    print("  -- press 'p' to resume -- ")
-                elif my_key == 112:     # 'p'
-                    if not paused:
-                        print('---')
-                    paused = not paused
-                elif my_key == 27:      # <escape>
-                    print('Boo!')
-                elif my_key == 120:     # 'x'
-                    closeout()
-                elif my_key == 97:      # 'a'
-                    handset_uut.cmd_alcohol_test()
-                    print(' Alcohol Test Requested...')
-                elif my_key == 114:      # 'r'
-                    print(' ' + str(handset_uut))
-                elif my_key == 115:      # 's'
-                    handset_uut.cmd_go_sleep()
-                    print(' Handset Sleep Requested...')
-                else:
-                    print("::{}::".format(my_key))
-
+            handle_keystrokes()
             if paused:
                 continue
-            poll(1)
+            poll()
 
     except KeyboardInterrupt:
         closeout()
