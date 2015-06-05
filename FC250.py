@@ -56,10 +56,9 @@ class FC250Handset(object):
             self.s.close()
         logging.shutdown()
 
-    @property
     def __str__(self):
         status = 'FC250 Handset "{name}" (S/N:{serial_number}) connected on {comm}'
-        return status.format(**self.__dict__)
+        return str(status.format(**self.__dict__))
 
     def close(self):
         """

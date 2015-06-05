@@ -7,6 +7,13 @@ from FC_protocol import HandsetState, HeaterState, CellHeatLevel, PKT_PREAMBLE, 
 
 log = None
 handset_uut = None
+key_help = {'a': 'Alcohol Test request',
+            'r': 'Report Handset info',
+            's': 'Sleep Handset',
+            'p': 'Pause/Resume status',
+            '?': 'This help menu',
+            'x': 'Exit program'
+            }
 
 
 def hex_dump(data):
@@ -62,6 +69,7 @@ def main():
     legend = 'time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState,HeaterState,CellHeaterLevel'
     print(legend, file=log)
 
+    paused = False
     try:
         while True:
             if kbhit():
@@ -70,20 +78,33 @@ def main():
                     # so get the next code
                     my_key = ord(getch())
                     print("+:{}:+".format(my_key))
+                elif my_key == 63:      # '?'
+                    paused = True
+                    print("  Help Menu")
+                    for k, v in key_help.items():
+                        print('   {} : {}'.format(k, v))
+                    print("  -- press 'p' to resume -- ")
+                elif my_key == 112:     # 'p'
+                    if not paused:
+                        print('---')
+                    paused = not paused
                 elif my_key == 27:      # <escape>
                     print('Boo!')
                 elif my_key == 120:     # 'x'
                     closeout()
                 elif my_key == 97:      # 'a'
                     handset_uut.cmd_alcohol_test()
-                    print('Alcohol Test Requested...')
-                    # print('## Alcohol Test Requested', file=log)
+                    print(' Alcohol Test Requested...')
+                elif my_key == 114:      # 'r'
+                    print(' ' + str(handset_uut))
                 elif my_key == 115:      # 's'
                     handset_uut.cmd_go_sleep()
-                    print('Handset Sleep Requested...')
-                    # print('## Handset Sleep Requested', file=log)
+                    print(' Handset Sleep Requested...')
                 else:
                     print("::{}::".format(my_key))
+
+            if paused:
+                continue
             poll(1)
 
     except KeyboardInterrupt:
