@@ -3,6 +3,7 @@ import sys
 import logging
 from time import sleep
 from FC_protocol import command_packet, wrap_packet, ProCommands, PKT_PREAMBLE, hs_status_id
+import struct
 
 
 #####################################################
@@ -16,13 +17,14 @@ class FC250Handset(object):
         :param name: Name of unit for results and log files
         """
         self.comm = comm
+        self.serial_number = None
         if name:
             assert isinstance(name, str)
             self.name = name
         else:
             self.name = comm
 
-        # init logging
+        # initiate logging
         logfile_name = self.name + '.log'
         logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',
@@ -30,7 +32,7 @@ class FC250Handset(object):
                             level=logging.INFO)
 
         logging.info('*** Initialization ***')
-        logging.info('Creating FC250 Handset object "{}" on {}'.format(self.name, self.comm))
+        # logging.info('Creating FC250 Handset object "{}" on {}'.format(self.name, self.comm))
 
         # initiate serial connection to handset
         self.s = None
@@ -47,15 +49,17 @@ class FC250Handset(object):
             print('Could not open comm {}'.format(self.comm))
             sys.exit(2)
 
-        logging.info('Created FC250 Handset object "{}" on {}'.format(self.name, self.comm))
+        logging.info('Created: ' + self.__str__)
 
     def __del__(self):
         if self.s and self.s.isOpen():
             self.s.close()
         logging.shutdown()
 
+    @property
     def __str__(self):
-        return 'FC250 Handset named {name} connected on {comm}'.format(**self.__dict__)
+        status = 'FC250 Handset "{name}" (S/N:{serial_number}) connected on {comm}'
+        return status.format(**self.__dict__)
 
     def close(self):
         """
@@ -63,7 +67,7 @@ class FC250Handset(object):
         :rtype : None
         """
         self.s.close()
-        logging.info('Closing FC250 Handset object "%s" on %s', self.name, self.comm)
+        logging.info('Closing: ' + self.__str__)
         logging.shutdown()
 
     def cmd_alcohol_test(self):
@@ -107,4 +111,6 @@ class FC250Handset(object):
         if pkt_preamble[:4] != hs_status_id:
             return None
 
+        # Update serial number on every valid status packet
+        self.serial_number, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
         return incoming_packet
