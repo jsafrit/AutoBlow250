@@ -52,8 +52,10 @@ class FC250Handset(object):
     def __del__(self):
         if self.s and self.s.isOpen():
             self.s.close()
-            logging.warning('Shutting down without proper close')
         logging.shutdown()
+
+    def __str__(self):
+        return 'FC250 Handset named {name} connected on {comm}'.format(**self.__dict__)
 
     def close(self):
         """
