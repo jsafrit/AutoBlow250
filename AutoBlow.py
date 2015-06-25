@@ -29,9 +29,10 @@ def poll(interval=1):
     # extract relevant data from packet
     block = incoming_packet[BLOCK]
 
-    my_labels = ('fVoltageIn', 'fLithiumBatteryVoltage', 'fIoFcCaseTemperature', 'fIoBreathTemperature',
-                 'fIoUnitCaseTemperature', 'fCurrentCellTemperatureSetpoint', 'fUtlRegulationTemperature')
-    my_floats = struct.unpack('<fffffff', block[64:92])
+    my_labels = ('fVoltageIn', 'fLithiumBatteryVoltage', 'fHardwareRevision', 'fIoFcCaseTemperature',
+                 'fIoBreathTemperature', 'fIoUnitCaseTemperature', 'fCurrentCellTemperatureSetpoint',
+                 'fUtlRegulationTemperature')
+    my_floats = struct.unpack('<ffffffff', block[64:96])
     lookup = dict(zip(my_labels, my_floats))
 
     my_labels2 = ('uiTestActive', 'ucStaState', 'ucBasicState', 'ucStaHeaterState', 'ucUtlCellHeatLevel',
