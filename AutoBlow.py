@@ -32,16 +32,20 @@ def poll(interval=1):
 
     hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
 
-    line = '{0:%H:%M:%S.%f},'.format(datetime.datetime.now())
-    line += '{:0.2f},'.format(status_lookup['fVoltageIn'])
-    line += '{:0.2f},'.format(status_lookup['fIoFcCaseTemperature'])
-    line += '{:0.2f},'.format(status_lookup['fIoUnitCaseTemperature'])
-    line += '{:d},'.format(status_lookup['iCurrentBreathPressure'])
+    # line = '{0:%H:%M:%S.%f},'.format(datetime.datetime.now())
+    timestamp = datetime.datetime.now()
+    line = '{:%H:%M:%S}.{:03d},'.format(timestamp, int(timestamp.microsecond / 1000))
+    # line += '{:0.2f},'.format(status_lookup['fVoltageIn'])
+    # line += '{:0.2f},'.format(status_lookup['fIoFcCaseTemperature'])
+    # line += '{:0.2f},'.format(status_lookup['fIoUnitCaseTemperature'])
+    line += '{:8d},'.format(status_lookup['iCurrentBreathPressure'])
     line += '{},'.format(HandsetState(status_lookup['ucStaState']).name)
-    line += '{},'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
-    line += '{}'.format(CellHeatLevel(status_lookup['ucUtlCellHeatLevel']).name)
+    line += '{}'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
+    # line += '{}'.format(CellHeatLevel(status_lookup['ucUtlCellHeatLevel']).name)
     print(line)
-    print(line, file=log)
+
+    if status_lookup['ucStaState'] in (HandsetState.STA_BLOWING, HandsetState.STA_WAIT_FOR_BLOW):
+        print(line, file=log)
 
 
 def create_status_dict(block):
@@ -115,7 +119,8 @@ def main():
 
     # setup results logging
     log = open(sys.argv[2]+'.csv', mode='a', buffering=1)
-    legend = 'time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState,HeaterState,CellHeaterLevel'
+    #legend = 'time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState,HeaterState,CellHeaterLevel'
+    legend = 'time,BreathPressure,S/N,HandsetState,HeaterState,CellHeaterLevel'
     print(legend, file=log)
 
     try:
@@ -123,7 +128,7 @@ def main():
             handle_keystrokes()
             if paused:
                 continue
-            poll(.04)
+            poll(.039)
 
     except KeyboardInterrupt:
         closeout()
