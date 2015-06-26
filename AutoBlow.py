@@ -39,6 +39,8 @@ def poll(interval=1):
     # line += '{:0.2f},'.format(status_lookup['fIoFcCaseTemperature'])
     # line += '{:0.2f},'.format(status_lookup['fIoUnitCaseTemperature'])
     line += '{:8d},'.format(status_lookup['iCurrentBreathPressure'])
+    # line += '0x{:08X},'.format(hs_serial)
+    line += '{:8d},'.format(hs_serial)
     line += '{},'.format(HandsetState(status_lookup['ucStaState']).name)
     line += '{}'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
     # line += '{}'.format(CellHeatLevel(status_lookup['ucUtlCellHeatLevel']).name)
@@ -120,7 +122,7 @@ def main():
     # setup results logging
     log = open(sys.argv[2]+'.csv', mode='a', buffering=1)
     #legend = 'time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState,HeaterState,CellHeaterLevel'
-    legend = 'time,BreathPressure,S/N,HandsetState,HeaterState,CellHeaterLevel'
+    legend = 'time,BreathPressure,S/N,HandsetState,HeaterState'
     print(legend, file=log)
 
     try:
