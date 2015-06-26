@@ -28,30 +28,40 @@ def poll(interval=1):
 
     # extract relevant data from packet
     block = incoming_packet[BLOCK]
+    status_lookup = create_status_dict(block)
 
+    hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
+
+    line = '{0:%H:%M:%S.%f},'.format(datetime.datetime.now())
+    line += '{:0.2f},'.format(status_lookup['fVoltageIn'])
+    line += '{:0.2f},'.format(status_lookup['fIoFcCaseTemperature'])
+    line += '{:0.2f},'.format(status_lookup['fIoUnitCaseTemperature'])
+    line += '{:d},'.format(status_lookup['iCurrentBreathPressure'])
+    line += '{},'.format(HandsetState(status_lookup['ucStaState']).name)
+    line += '{},'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
+    line += '{}'.format(CellHeatLevel(status_lookup['ucUtlCellHeatLevel']).name)
+    print(line)
+    print(line, file=log)
+
+
+def create_status_dict(block):
     my_labels = ('fVoltageIn', 'fLithiumBatteryVoltage', 'fHardwareRevision', 'fIoFcCaseTemperature',
                  'fIoBreathTemperature', 'fIoUnitCaseTemperature', 'fCurrentCellTemperatureSetpoint',
-                 'fUtlRegulationTemperature')
-    my_floats = struct.unpack('<ffffffff', block[64:96])
+                 'fUtlRegulationTemperature', 'iPressureTemperature', 'iCaseTemperature')
+    my_floats = struct.unpack('<ffffffffii', block[64:104])
     lookup = dict(zip(my_labels, my_floats))
-
     my_labels2 = ('uiTestActive', 'ucStaState', 'ucBasicState', 'ucStaHeaterState', 'ucUtlCellHeatLevel',
                   'ucClstStatus')
     my_data = struct.unpack('<LBBBBB', block[55:64])
     lookup2 = dict(zip(my_labels2, my_data))
-
-    hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
-
-    line = '{0:%H:%M:%S},'.format(datetime.datetime.now())
-    line += '{:0.2f},'.format(lookup['fVoltageIn'])
-    line += '{:0.2f},'.format(lookup['fIoFcCaseTemperature'])
-    line += '{:0.2f},'.format(lookup['fIoUnitCaseTemperature'])
-    line += '0x{:08X},'.format(hs_serial)
-    line += '{},'.format(HandsetState(lookup2['ucStaState']).name)
-    line += '{},'.format(HeaterState(lookup2['ucStaHeaterState']).name)
-    line += '{}'.format(CellHeatLevel(lookup2['ucUtlCellHeatLevel']).name)
-    print(line)
-    print(line, file=log)
+    my_labels3 = ('fBrac', 'usBrac', 'uiHumLevel', 'iCurrentBreathPressure', 'iCurrentAmbientPressure',
+                  'ucHumLoudness', 'ucHumTone', 'ucHumQuality', 'bSolenoidPulled')
+    my_data3 = struct.unpack('<fHIiiBBBB', block[230:252])
+    lookup3 = dict(zip(my_labels3, my_data3))
+    status_lookup = lookup.copy()
+    status_lookup.update(lookup2)
+    status_lookup.update(lookup3)
+    return status_lookup
 
 
 def handle_keystrokes():
@@ -113,7 +123,7 @@ def main():
             handle_keystrokes()
             if paused:
                 continue
-            poll()
+            poll(.04)
 
     except KeyboardInterrupt:
         closeout()
