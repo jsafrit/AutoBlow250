@@ -180,8 +180,8 @@ def main():
 
     last_capture_state = capturing
     relay_closed = False
-    next_blow_time = time() + 10
-    total_blows = 5
+    next_blow_time = time() + 5
+    total_blows = 6
 
     try:
         while True:
