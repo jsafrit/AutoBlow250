@@ -180,7 +180,7 @@ def main():
 
     last_capture_state = capturing
     relay_closed = False
-    next_blow_time = time() + 5
+    next_blow_time = time() + 15
     total_blows = 6
 
     try:
@@ -203,6 +203,8 @@ def main():
             current_time = time()
             if (current_time - start_time) > 5:
                 capturing = False
+                # if total_blows == 1:
+                #     closeout()
 
             if current_time > next_blow_time:
                 next_blow_time = time() + 35
