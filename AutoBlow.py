@@ -89,12 +89,16 @@ def create_status_dict(block):
     return status_lookup
 
 
-def handle_keystrokes():
+def handle_keystrokes(forced_key=None):
     global paused
     global capturing
     global start_time
-    if kbhit():
-        my_key = ord(getch())
+    if kbhit() or forced_key:
+        if not forced_key:
+            my_key = ord(getch())
+        else:
+            my_key = forced_key
+
         if my_key == 0 or my_key == 224:        # a special function key
             # so get the next code
             my_key = ord(getch())
@@ -176,6 +180,9 @@ def main():
 
     last_capture_state = capturing
     relay_closed = False
+    next_blow_time = time() + 10
+    total_blows = 5
+
     try:
         while True:
             handle_keystrokes()
@@ -190,11 +197,21 @@ def main():
                 relay_closed = True
             last_capture_state = capturing
 
-            if (time() - start_time) > 5:
+            current_time = time()
+            if (current_time - start_time) > 5:
                 capturing = False
+
+            if current_time > next_blow_time:
+                next_blow_time = time() + 35
+                total_blows -= 1
+                if total_blows:
+                    handle_keystrokes(99)
+                else:
+                    closeout()
 
     except KeyboardInterrupt:
         closeout()
+
 
 if __name__ == '__main__':
     main()
