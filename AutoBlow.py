@@ -190,11 +190,14 @@ def main():
                 continue
             if capturing:
                 poll(.039)
-            if relay_closed:
+            if relay_closed and delay_to_open:
+                delay_to_open -= 1
+            elif relay_closed:
                 my_relay.write(ALL_OFF)
             if not last_capture_state and capturing:
                 my_relay.write(RELAY_ON)
                 relay_closed = True
+                delay_to_open = 20
             last_capture_state = capturing
 
             current_time = time()
