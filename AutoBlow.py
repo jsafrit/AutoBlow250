@@ -3,12 +3,16 @@ import datetime
 import sys
 from msvcrt import getch, kbhit
 from FC250 import FC250Handset
-from FC_protocol import HandsetState, HeaterState, CellHeatLevel, PKT_PREAMBLE, BLOCK
+from FC_protocol import HandsetState, HeaterState, PKT_PREAMBLE, BLOCK
+import ftd2xx as ft
+from time import time
 
 log = None
 handset_uut = None
+my_relay = None
 paused = False
 capturing = False
+start_time = time()
 key_help = {'a': 'Alcohol Test request',
             'r': 'Report Handset info',
             's': 'Sleep Handset',
@@ -18,6 +22,8 @@ key_help = {'a': 'Alcohol Test request',
             '?': 'This help menu',
             'x': 'Exit program'
             }
+ALL_OFF = b'\000'
+RELAY_ON = b'\001'
 
 
 def hex_dump(data):
@@ -86,6 +92,7 @@ def create_status_dict(block):
 def handle_keystrokes():
     global paused
     global capturing
+    global start_time
     if kbhit():
         my_key = ord(getch())
         if my_key == 0 or my_key == 224:        # a special function key
@@ -110,6 +117,7 @@ def handle_keystrokes():
             print(' Stop Capture...')
         elif my_key == 99:      # 'c'
             capturing = True
+            start_time = time()
             print(' Start Capture...')
         elif my_key == 115:      # 's'
             handset_uut.cmd_go_sleep()
@@ -129,28 +137,61 @@ def closeout():
     print('Closing log files and exiting.')
     log.close()
     handset_uut.close()
+    my_relay.close()
     sys.exit(1)
 
 
 def main():
     global log
     global handset_uut
+    global my_relay
+    global capturing
 
     # initialize UUT from commandline args
     handset_uut = FC250Handset(sys.argv[1], sys.argv[2])
 
+    # initialize relay
+    # open board and setup for Async BitBing Mode
+    try:
+        my_relay = ft.open(0)
+    except ft.DeviceError:
+        print('Cannot open device: {}'.format(ft.DeviceError))
+        sys.exit(2)
+
+    result = my_relay.setBitMode(0xFF, 0x1)
+    if not result:
+        print('Setup successful.')
+        details = ft.getDeviceInfoDetail()
+        print('Description: {}'.format(details['description'].decode()))
+        my_relay.write(ALL_OFF)
+    else:
+        print('Failed to setup relay. Exiting...')
+        sys.exit(3)
+
     # setup results logging
     log = open(sys.argv[2]+'.csv', mode='a', buffering=1)
-    #legend = 'time,fVoltageIn,fIoFcCaseTemperature,fIoUnitCaseTemperature,S/N,HandsetState,HeaterState,CellHeaterLevel'
+
     legend = 'time,BreathPressure,S/N,HandsetState,HeaterState'
     print(legend, file=log)
 
+    last_capture_state = capturing
+    relay_closed = False
     try:
         while True:
             handle_keystrokes()
             if paused:
                 continue
-            poll(.039)
+            if capturing:
+                poll(.039)
+            if relay_closed:
+                my_relay.write(ALL_OFF)
+            if not last_capture_state and capturing:
+                my_relay.write(RELAY_ON)
+                relay_closed = True
+            last_capture_state = capturing
+
+            if (time() - start_time) > 5:
+                capturing = False
 
     except KeyboardInterrupt:
         closeout()
