@@ -8,10 +8,13 @@ from FC_protocol import HandsetState, HeaterState, CellHeatLevel, PKT_PREAMBLE, 
 log = None
 handset_uut = None
 paused = False
+capturing = False
 key_help = {'a': 'Alcohol Test request',
             'r': 'Report Handset info',
             's': 'Sleep Handset',
             'p': 'Pause/Resume status',
+            'c': 'Start Capture',
+            'z': 'Stop Capture',
             '?': 'This help menu',
             'x': 'Exit program'
             }
@@ -46,8 +49,18 @@ def poll(interval=1):
     # line += '{}'.format(CellHeatLevel(status_lookup['ucUtlCellHeatLevel']).name)
     print(line)
 
-    if status_lookup['ucStaState'] in (HandsetState.STA_BLOWING, HandsetState.STA_WAIT_FOR_BLOW):
+    if capturing:
         print(line, file=log)
+
+    # trailing_count = 0
+    # if status_lookup['ucStaState'] in (HandsetState.STA_BLOWING, HandsetState.STA_WAIT_FOR_BLOW):
+    #     trailing_count = 10
+    #     print(line, file=log)
+    #
+    # if status_lookup['ucStaState'] in (HandsetState.STA_INIT_ABORT_DISP_WAIT, HandsetState.STA_ABORT_DISP_WAIT):
+    #     if trailing_count > 0:
+    #         trailing_count -= 1
+    #         print(line, file=log)
 
 
 def create_status_dict(block):
@@ -72,6 +85,7 @@ def create_status_dict(block):
 
 def handle_keystrokes():
     global paused
+    global capturing
     if kbhit():
         my_key = ord(getch())
         if my_key == 0 or my_key == 224:        # a special function key
@@ -91,6 +105,12 @@ def handle_keystrokes():
         elif my_key == 97:      # 'a'
             handset_uut.cmd_alcohol_test()
             print(' Alcohol Test Requested...')
+        elif my_key == 122:      # 'z'
+            capturing = False
+            print(' Stop Capture...')
+        elif my_key == 99:      # 'c'
+            capturing = True
+            print(' Start Capture...')
         elif my_key == 115:      # 's'
             handset_uut.cmd_go_sleep()
             print(' Handset Sleep Requested...')
