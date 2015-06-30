@@ -81,7 +81,12 @@ def create_status_dict(block):
     lookup2 = dict(zip(my_labels2, my_data))
     my_labels3 = ('fBrac', 'usBrac', 'uiHumLevel', 'iCurrentBreathPressure', 'iCurrentAmbientPressure',
                   'ucHumLoudness', 'ucHumTone', 'ucHumQuality', 'bSolenoidPulled')
-    my_data3 = struct.unpack('<fHIiiBBBB', block[230:252])
+
+    #for F/W v1.18
+    #my_data3 = struct.unpack('<fHIiiBBBB', block[230:252])
+    #for F/W v1.17
+    my_data3 = struct.unpack('<fHIiiBBBB', block[226:248])
+
     lookup3 = dict(zip(my_labels3, my_data3))
     status_lookup = lookup.copy()
     status_lookup.update(lookup2)
