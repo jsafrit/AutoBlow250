@@ -9,7 +9,7 @@ DataPoint = collections.namedtuple("DataPoint", ["timestamp", "pressure", "seria
 
 # read in data file
 dp = []
-for line in csv.reader(open("UUT1-3.csv", "r"), skipinitialspace=True):
+for line in csv.reader(open("UUT1-7.csv", "r"), skipinitialspace=True):
     data_pt = DataPoint._make(line)
     dp.append(data_pt)
 
@@ -73,7 +73,7 @@ for i, blow in enumerate(blows):
     sec, us = str(blow_time).split(':')[2].split('.')
     sec = int(sec)
     us = int(us[:3])
-    print('{:d}.{:d},'.format(sec, us))
+    # print('{:d}.{:d},'.format(sec, us))
 
     blow_time = sec + us/1000.0
     report_str = 'Sample {}:  length={}  max={}  min={} threshold={} avg={} time={:.3f}'
@@ -87,6 +87,7 @@ plt.title(serial_number)
 plt.legend()
 x = range(len(blows[0][0]))
 for i, blow in enumerate(blows):
+    x = range(len(blow[0]))
     ax.plot(x, blow[1], label='Blow %d' % i)
     ax.legend(loc='lower center')
 
