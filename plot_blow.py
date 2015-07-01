@@ -54,14 +54,30 @@ for i, blow in enumerate(blows):
     y = list(map(int, blow[1]))
     blow_max = max(y)
     blow_min = min(y)
-    threshold = blow_max * 0.75
+    threshold = blow_max * 0.7
     peak = [x for x in y if x > threshold]
-    print(peak[:8], peak[-8:])
-    print(len(peak))
+    # print(peak[:8], peak[-8:])
+    # print(len(peak))
     peak_avg = np.mean(peak)
+    for j, pt in enumerate(y):
+        if pt > threshold:
+            start_ts = blow[0][j]
+    for k, pt in enumerate(y[::-1]):
+        if pt > threshold:
+            end_ts = blow[0][length-k-1]
 
-    print('Sample {}:  length={}  max={}  min={} threshold={} avg={}'.format(i, length, blow_max, blow_min,
-                                                                             threshold, peak_avg))
+    blow_time = start_ts-end_ts
+
+    # this kludge because no formatting for timedelta
+    # print(blow_time)
+    sec, us = str(blow_time).split(':')[2].split('.')
+    sec = int(sec)
+    us = int(us[:3])
+    print('{:d}.{:d},'.format(sec, us))
+
+    blow_time = sec + us/1000.0
+    report_str = 'Sample {}:  length={}  max={}  min={} threshold={} avg={} time={:.3f}'
+    print(report_str.format(i, length, blow_max, blow_min, threshold, peak_avg, blow_time))
 
 
 # do the plotting
