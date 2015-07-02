@@ -98,6 +98,7 @@ def process_file(fn):
         a = csv.writer(fp, delimiter=',')
         a.writerow(out_summary)
 
+
 def plot_it():
     # do the plotting
     fig, ax = plt.subplots()
@@ -112,6 +113,8 @@ def plot_it():
 
     plt.show()
 
+
+# region plotting stuff
 # x = np.linspace(0, 2*np.pi, 50)
 # y = np.sin(x)
 # y2 = y + 0.1 * np.random.normal(size=x.shape)
@@ -137,6 +140,7 @@ def plot_it():
 # ax.xaxis.set_ticks_position('bottom')
 #
 # plt.show()
+# endregion
 
 def main():
     # for arg in sys.argv:
@@ -146,7 +150,7 @@ def main():
     for file in args:
         print(file)
         process_file(file)
-        #plot_it()
+        # plot_it()
 
 
 if __name__ == '__main__':
