@@ -4,6 +4,7 @@ import collections
 import csv
 import datetime
 import glob
+import sys
 
 DataPoint = collections.namedtuple("DataPoint", ["timestamp", "pressure", "serial_number",
                                                  "handset_state", "cellheater_state"])
@@ -87,14 +88,20 @@ def process_file(fn):
         print(report_str.format(i, length, blow_max, blow_min, threshold, peak_avg, blow_time))
         out_data.append([serial_number, flow_rate, i, peak_avg, blow_time, blow_max, blow_min])
 
+    total = 0
+    for x in out_data[1:]:
+        total += x[3]
+
+    out_summary = [serial_number, flow_rate, total / 4.0]
+
     with open('out.csv', 'a', newline='') as fp:
         a = csv.writer(fp, delimiter=',')
-        a.writerows(out_data)
+        a.writerow(out_summary)
 
 def plot_it():
     # do the plotting
     fig, ax = plt.subplots()
-    colors = ['b', 'g', 'r', 'y', 'k']
+    # colors = ['b', 'g', 'r', 'y', 'k']
     plt.title(serial_number)
     plt.legend()
     x = range(len(blows[0][0]))
@@ -135,8 +142,9 @@ def main():
     # for arg in sys.argv:
     #    print(arg)
 
-    args = glob.glob('UUT*.csv')
+    args = glob.glob(sys.argv[1])
     for file in args:
+        print(file)
         process_file(file)
         #plot_it()
 
