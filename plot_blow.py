@@ -57,6 +57,8 @@ def process_file(fn):
 
     # find avg
     out_data = []
+    start_ts = 0
+    end_ts = 0
     for i, blow in enumerate(blows):
         length = len(blow[0])
         y = list(map(int, blow[1]))
@@ -99,18 +101,16 @@ def process_file(fn):
         a.writerow(out_summary)
 
 
-def plot_it():
+def plot_it(blows, serial_number='None'):
     # do the plotting
     fig, ax = plt.subplots()
     # colors = ['b', 'g', 'r', 'y', 'k']
     plt.title(serial_number)
     plt.legend()
-    x = range(len(blows[0][0]))
     for i, blow in enumerate(blows):
         x = range(len(blow[0]))
         ax.plot(x, blow[1], label='Blow %d' % i)
         ax.legend(loc='lower center')
-
     plt.show()
 
 
