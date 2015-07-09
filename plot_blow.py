@@ -8,9 +8,25 @@ import sys
 
 DataPoint = collections.namedtuple("DataPoint", ["timestamp", "pressure", "serial_number",
                                                  "handset_state", "cellheater_state"])
+Point = collections.namedtuple('Point', ['x', 'y'])
+
+blows = []
+
+class Blow(object):
+    def __init__(self, serial_number=None, volume=0, rate=0, samples=None, seq=0):
+            """
+            Blow object
+            """
+            self.volume = volume
+            self.rate = rate
+            self.samples = samples
+            self.serial_number = serial_number
+            self.seq = seq
 
 
 def process_file(fn):
+    global blows
+
     # read in data file
     dp = []
     for line in csv.reader(open(fn, "r"), skipinitialspace=True):
@@ -22,21 +38,22 @@ def process_file(fn):
 
     # get s/n from last entry
     serial_number = dp[0].serial_number
-    flow_rate = fn.split('-')[1][0]
+    flow_rate = fn.split('-')[2][0]
     flow_rate = int(flow_rate)/10.0
-    print(flow_rate)
-    print(serial_number)
+    vol = float(fn.split('-')[1])
+    print('Serial Number: {}   Volume: {}   Flow Rate: {}'.format(serial_number, vol, flow_rate))
 
     # separate into each blow by timestamp
-    blows = []
     x = []
     y = []
+    seq = 0
     for p in dp:
         sample_time = datetime.datetime.strptime(p.timestamp, "%H:%M:%S.%f")
         try:
             delta_time = sample_time - x[-1]
             if delta_time > datetime.timedelta(seconds=10):
-                blows.append([x.copy(), y.copy()])
+                blows.append(Blow(serial_number, vol, flow_rate, [x.copy(), y.copy()], seq))
+                seq += 1
                 x.clear()
                 y.clear()
             elif delta_time > datetime.timedelta(microseconds=60000):
@@ -46,7 +63,8 @@ def process_file(fn):
 
         x.append(sample_time)
         y.append(p.pressure)
-    blows.append([x, y])
+    blows.append(Blow(serial_number, vol, flow_rate, [x, y], seq))
+    print('Number of blows processed: {}'.format(seq+1))
 
     # convert all datetime to time
     # for x, y in blows:
@@ -56,6 +74,9 @@ def process_file(fn):
     #     print(y)
 
     # find avg
+    return
+
+def run_stats():
     out_data = []
     start_ts = 0
     end_ts = 0
@@ -142,6 +163,24 @@ def plot_it(blows, serial_number='None'):
 # plt.show()
 # endregion
 
+def correct_missing_samples():
+    global blows
+
+    for blow in blows:
+        new_samples = []
+        original_samples = blow.samples
+        print('Starting samples: {}'.format(len(samples[0])))
+        for sample in original_samples:
+            try:
+                delta_time = sample - x[-1]
+                if delta_time > datetime.timedelta(microseconds=60000):
+                    print('Boo!', delta_time)
+            except IndexError:
+                pass
+
+        print('Ending samples: {}'.format(len(samples[0])))
+
+
 def main():
     # for arg in sys.argv:
     #    print(arg)
@@ -150,8 +189,9 @@ def main():
     for file in args:
         print(file)
         process_file(file)
-        # plot_it()
-
+        
+    correct_missing_samples()
+    # run_stats()
 
 if __name__ == '__main__':
     main()
