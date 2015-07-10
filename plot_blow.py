@@ -201,12 +201,15 @@ def fix_missing(blow):
     return clean, new_samples
 
 
-def out_file():
+def out_file(limit=None):
     for blow in blows:
         fn = '{}-{}-{}_{}.csv'.format(blow.serial_number, blow.volume, blow.rate, blow.seq)
         with(open(fn, 'w')) as f:
             for pt in blow.samples:
-                print('{},{}'.format(pt.x, pt.y), file=f)
+                if limit is None:
+                    print('{},{}'.format(pt.x, pt.y), file=f)
+                elif float(pt.y) > limit:
+                    print('{},{}'.format(pt.x, pt.y), file=f)
 
 
 def main():
@@ -219,7 +222,7 @@ def main():
         process_file(file)
         
     correct_missing_samples()
-    out_file()
+    out_file(20000)
     # run_stats()
 
 if __name__ == '__main__':
