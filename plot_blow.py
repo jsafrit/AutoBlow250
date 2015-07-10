@@ -44,27 +44,30 @@ def process_file(fn):
     print('Serial Number: {}   Volume: {}   Flow Rate: {}'.format(serial_number, vol, flow_rate))
 
     # separate into each blow by timestamp
-    x = []
-    y = []
+    # x = []
+    pts = []
     seq = 0
     for p in dp:
         sample_time = datetime.datetime.strptime(p.timestamp, "%H:%M:%S.%f")
         try:
-            delta_time = sample_time - x[-1]
+            delta_time = sample_time - pts[-1].x
             if delta_time > datetime.timedelta(seconds=10):
-                blows.append(Blow(serial_number, vol, flow_rate, [x.copy(), y.copy()], seq))
+                blows.append(Blow(serial_number, vol, flow_rate, pts.copy(), seq))
                 seq += 1
-                x.clear()
-                y.clear()
+                # x.clear()
+                pts.clear()
             elif delta_time > datetime.timedelta(microseconds=60000):
                 print('Boo!', delta_time)
         except IndexError:
             pass
 
-        x.append(sample_time)
-        y.append(p.pressure)
-    blows.append(Blow(serial_number, vol, flow_rate, [x, y], seq))
+        # x.append(sample_time)
+        # y.append(p.pressure)
+        pts.append(Point(x=sample_time, y=p.pressure))
+
+    blows.append(Blow(serial_number, vol, flow_rate, pts, seq))
     print('Number of blows processed: {}'.format(seq+1))
+    print(blows[0])
 
     # convert all datetime to time
     # for x, y in blows:
@@ -167,18 +170,43 @@ def correct_missing_samples():
     global blows
 
     for blow in blows:
-        new_samples = []
-        original_samples = blow.samples
-        print('Starting samples: {}'.format(len(samples[0])))
-        for sample in original_samples:
-            try:
-                delta_time = sample - x[-1]
-                if delta_time > datetime.timedelta(microseconds=60000):
-                    print('Boo!', delta_time)
-            except IndexError:
-                pass
+        new_samples = blow.samples.copy()
+        print('Starting samples: {}'.format(len(new_samples)))
+        clean = False
+        while not clean:
+            clean, new_samples = fix_missing(new_samples)
+        print('Ending samples: {}'.format(len(new_samples)))
+        blow.samples = new_samples
 
-        print('Ending samples: {}'.format(len(samples[0])))
+
+def fix_missing(blow):
+    new_samples = []
+    original_samples = blow
+    # print('Starting samples: {}'.format(len(original_samples)))
+    clean = True
+    for i, point in enumerate(original_samples):
+        try:
+            delta_time = point.x - original_samples[i - 1].x
+            if delta_time > datetime.timedelta(microseconds=60000):
+                print('Boo!', delta_time)
+                pt = Point(original_samples[i - 1].x + delta_time/2.0,
+                           str((float(original_samples[i - 1].y) + float(original_samples[i].y))/2.0))
+                new_samples.append(pt)
+                new_samples.append(point)
+                clean = False
+            else:
+                new_samples.append(point)
+        except IndexError:
+            pass
+    return clean, new_samples
+
+
+def out_file():
+    for blow in blows:
+        fn = '{}-{}-{}_{}.csv'.format(blow.serial_number, blow.volume, blow.rate, blow.seq)
+        with(open(fn, 'w')) as f:
+            for pt in blow.samples:
+                print('{},{}'.format(pt.x, pt.y), file=f)
 
 
 def main():
@@ -191,6 +219,7 @@ def main():
         process_file(file)
         
     correct_missing_samples()
+    out_file()
     # run_stats()
 
 if __name__ == '__main__':
