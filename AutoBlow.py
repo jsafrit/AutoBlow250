@@ -83,9 +83,9 @@ def create_status_dict(block):
                   'ucHumLoudness', 'ucHumTone', 'ucHumQuality', 'bSolenoidPulled')
 
     #for F/W v1.18
-    #my_data3 = struct.unpack('<fHIiiBBBB', block[230:252])
+    my_data3 = struct.unpack('<fHIiiBBBB', block[230:252])
     #for F/W v1.17
-    my_data3 = struct.unpack('<fHIiiBBBB', block[226:248])
+    #my_data3 = struct.unpack('<fHIiiBBBB', block[226:248])
 
     lookup3 = dict(zip(my_labels3, my_data3))
     status_lookup = lookup.copy()
@@ -185,7 +185,7 @@ def main():
 
     last_capture_state = capturing
     relay_closed = False
-    next_blow_time = time() + 15
+    next_blow_time = time() + 60
     total_blows = 6
 
     try:
