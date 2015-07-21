@@ -10,10 +10,9 @@ DataPoint = collections.namedtuple("DataPoint", ["timestamp", "pressure", "seria
                                                  "handset_state", "cellheater_state"])
 Point = collections.namedtuple('Point', ['x', 'y'])
 
-blows = []
 
 class Blow(object):
-    def __init__(self, serial_number=None, volume=0, rate=0, samples=None, seq=0):
+    def __init__(self, serial_number=None, volume=0.0, rate=0.0, samples=None, seq=0):
             """
             Blow object
             """
@@ -22,6 +21,9 @@ class Blow(object):
             self.samples = samples
             self.serial_number = serial_number
             self.seq = seq
+
+
+blows = []
 
 
 def process_file(fn):
@@ -78,6 +80,53 @@ def process_file(fn):
 
     # find avg
     return
+
+
+def correct_missing_samples():
+    global blows
+
+    for blow in blows:
+        new_samples = blow.samples.copy()
+        print('Starting samples: {}'.format(len(new_samples)))
+        clean = False
+        while not clean:
+            clean, new_samples = fix_missing(new_samples)
+        print('Ending samples: {}'.format(len(new_samples)))
+        blow.samples = new_samples
+
+
+def fix_missing(blow):
+    new_samples = []
+    original_samples = blow
+    # print('Starting samples: {}'.format(len(original_samples)))
+    clean = True
+    for i, point in enumerate(original_samples):
+        try:
+            delta_time = point.x - original_samples[i - 1].x
+            if delta_time > datetime.timedelta(microseconds=60000):
+                print('Boo!', delta_time)
+                pt = Point(original_samples[i - 1].x + delta_time/2.0,
+                           str((float(original_samples[i - 1].y) + float(original_samples[i].y))/2.0))
+                new_samples.append(pt)
+                new_samples.append(point)
+                clean = False
+            else:
+                new_samples.append(point)
+        except IndexError:
+            pass
+    return clean, new_samples
+
+
+def out_file(limit=None):
+    for blow in blows:
+        fn = '{}-{}-{}_{}.csv'.format(blow.serial_number, blow.volume, blow.rate, blow.seq)
+        with(open(fn, 'w')) as f:
+            for pt in blow.samples:
+                if limit is None:
+                    print('{},{}'.format(pt.x, pt.y), file=f)
+                elif float(pt.y) > limit:
+                    print('{},{}'.format(pt.x, pt.y), file=f)
+
 
 def run_stats():
     out_data = []
@@ -136,8 +185,6 @@ def plot_it(blows, serial_number='None'):
         ax.plot(x, blow[1], label='Blow %d' % i)
         ax.legend(loc='lower center')
     plt.show()
-
-
 # region plotting stuff
 # x = np.linspace(0, 2*np.pi, 50)
 # y = np.sin(x)
@@ -165,51 +212,6 @@ def plot_it(blows, serial_number='None'):
 #
 # plt.show()
 # endregion
-
-def correct_missing_samples():
-    global blows
-
-    for blow in blows:
-        new_samples = blow.samples.copy()
-        print('Starting samples: {}'.format(len(new_samples)))
-        clean = False
-        while not clean:
-            clean, new_samples = fix_missing(new_samples)
-        print('Ending samples: {}'.format(len(new_samples)))
-        blow.samples = new_samples
-
-
-def fix_missing(blow):
-    new_samples = []
-    original_samples = blow
-    # print('Starting samples: {}'.format(len(original_samples)))
-    clean = True
-    for i, point in enumerate(original_samples):
-        try:
-            delta_time = point.x - original_samples[i - 1].x
-            if delta_time > datetime.timedelta(microseconds=60000):
-                print('Boo!', delta_time)
-                pt = Point(original_samples[i - 1].x + delta_time/2.0,
-                           str((float(original_samples[i - 1].y) + float(original_samples[i].y))/2.0))
-                new_samples.append(pt)
-                new_samples.append(point)
-                clean = False
-            else:
-                new_samples.append(point)
-        except IndexError:
-            pass
-    return clean, new_samples
-
-
-def out_file(limit=None):
-    for blow in blows:
-        fn = '{}-{}-{}_{}.csv'.format(blow.serial_number, blow.volume, blow.rate, blow.seq)
-        with(open(fn, 'w')) as f:
-            for pt in blow.samples:
-                if limit is None:
-                    print('{},{}'.format(pt.x, pt.y), file=f)
-                elif float(pt.y) > limit:
-                    print('{},{}'.format(pt.x, pt.y), file=f)
 
 
 def main():
