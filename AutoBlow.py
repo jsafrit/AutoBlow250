@@ -3,7 +3,7 @@ import datetime
 import sys
 from msvcrt import getch, kbhit
 from FC250 import FC250Handset
-from FC_protocol import HandsetState, HeaterState, PKT_PREAMBLE, BLOCK
+from FC_protocol import HandsetState, HeaterState, PKT_PREAMBLE, BLOCK, PREAMBLE
 import ftd2xx as ft
 from time import time
 
@@ -35,9 +35,13 @@ def poll(interval=1):
     if not incoming_packet:
         return
 
+    # get the format of the status packet
+    preamble = incoming_packet[PREAMBLE]
+    layout_ver, *_ = struct.unpack('<B', preamble[4:5])
+
     # extract relevant data from packet
     block = incoming_packet[BLOCK]
-    status_lookup = create_status_dict(block)
+    status_lookup = create_status_dict(block, layout_version=layout_ver)
 
     hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
 
@@ -69,7 +73,7 @@ def poll(interval=1):
     #         print(line, file=log)
 
 
-def create_status_dict(block):
+def create_status_dict(block, layout_version=0):
     my_labels = ('fVoltageIn', 'fLithiumBatteryVoltage', 'fHardwareRevision', 'fIoFcCaseTemperature',
                  'fIoBreathTemperature', 'fIoUnitCaseTemperature', 'fCurrentCellTemperatureSetpoint',
                  'fUtlRegulationTemperature', 'iPressureTemperature', 'iCaseTemperature')
@@ -82,10 +86,12 @@ def create_status_dict(block):
     my_labels3 = ('fBrac', 'usBrac', 'uiHumLevel', 'iCurrentBreathPressure', 'iCurrentAmbientPressure',
                   'ucHumLoudness', 'ucHumTone', 'ucHumQuality', 'bSolenoidPulled')
 
-    #for F/W v1.18
-    my_data3 = struct.unpack('<fHIiiBBBB', block[230:252])
-    #for F/W v1.17
-    #my_data3 = struct.unpack('<fHIiiBBBB', block[226:248])
+    if layout_version in [7, 8]:
+        # for F/W v1.17 or v1.23
+        my_data3 = struct.unpack('<fHIiiBBBB', block[226:248])
+    else:
+        # for F/W v1.18
+        my_data3 = struct.unpack('<fHIiiBBBB', block[230:252])
 
     lookup3 = dict(zip(my_labels3, my_data3))
     status_lookup = lookup.copy()
