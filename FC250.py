@@ -67,7 +67,7 @@ class FC250Handset(object):
         """
         self.s.close()
         logging.info('Closing: ' + self.__str__())
-        logging.shutdown()
+        logging.close()
 
     def cmd_alcohol_test(self):
         """
