@@ -25,6 +25,7 @@ key_help = {'a': 'Alcohol Test request',
             }
 ALL_OFF = b'\000'
 RELAY_ON = b'\001'
+TEST_BLOWS = 4
 
 
 def hex_dump(data):
@@ -33,9 +34,12 @@ def hex_dump(data):
 
 def out_to_file():
     # find max number of samples per blow
-    max_len = max([len(x) for x in blow_rec])
-    lines = []
+    len_arrays = []
+    for y in blow_rec.keys():
+        len_arrays.append(len(blow_rec[y]))
+    max_len = max(len_arrays)
 
+    lines = []
     header = 'sample,'
     for x in range(max_len):
         line = '{},'.format(x)
@@ -87,7 +91,7 @@ def poll(interval=1):
 def new_poll(blow_number, interval=1):
     global blow_rec
 
-    blow_number = 6 - blow_number
+    blow_number = TEST_BLOWS - blow_number
     if blow_number not in blow_rec:
         blow_rec[blow_number] = []
 
@@ -235,8 +239,8 @@ def main():
 
     last_capture_state = capturing
     relay_closed = False
-    next_blow_time = time() + 60
-    total_blows = 6
+    next_blow_time = time() + 30    # 60
+    total_blows = TEST_BLOWS
 
     try:
         while True:
@@ -262,7 +266,7 @@ def main():
                 #     closeout()
 
             if current_time > next_blow_time:
-                next_blow_time = time() + 35
+                next_blow_time = time() + 25   # 35
                 total_blows -= 1
                 if total_blows:
                     handle_keystrokes(99)
