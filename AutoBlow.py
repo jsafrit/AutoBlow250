@@ -3,7 +3,7 @@ import datetime
 import sys
 from msvcrt import getch, kbhit
 from FC250 import FC250Handset
-from FC_protocol import HandsetState, HeaterState, PKT_PREAMBLE, BLOCK, PREAMBLE
+from FC_protocol import PKT_PREAMBLE, BLOCK, PREAMBLE
 import ftd2xx as ft
 from time import time
 
@@ -12,6 +12,7 @@ handset_uut = None
 my_relay = None
 paused = False
 capturing = False
+blow_rec = {}
 start_time = time()
 key_help = {'a': 'Alcohol Test request',
             'r': 'Report Handset info',
@@ -28,6 +29,31 @@ RELAY_ON = b'\001'
 
 def hex_dump(data):
     return ''.join('{:02X}'.format(x) for x in data)
+
+
+def out_to_file():
+    # find max number of samples per blow
+    max_len = max([len(x) for x in blow_rec])
+    lines = []
+
+    header = 'sample,'
+    for x in range(max_len):
+        line = '{},'.format(x)
+        for y in blow_rec.keys():
+            if not x:
+                header += 'blow {},'.format(y)
+            if x < len(blow_rec[y]):
+                line += '{},'.format(blow_rec[y][x])
+            else:
+                line += ','
+        lines.append(line)
+
+    with open(sys.argv[2]+'.csv', mode='a') as outfile:
+        print(header, file=outfile)
+        for line in lines:
+            print(line, file=outfile)
+
+    print('Results file written.')
 
 
 def poll(interval=1):
@@ -48,29 +74,46 @@ def poll(interval=1):
     # line = '{0:%H:%M:%S.%f},'.format(datetime.datetime.now())
     timestamp = datetime.datetime.now()
     line = '{:%H:%M:%S}.{:03d},'.format(timestamp, int(timestamp.microsecond / 1000))
-    # line += '{:0.2f},'.format(status_lookup['fVoltageIn'])
-    # line += '{:0.2f},'.format(status_lookup['fIoFcCaseTemperature'])
-    # line += '{:0.2f},'.format(status_lookup['fIoUnitCaseTemperature'])
     line += '{:8d},'.format(status_lookup['iCurrentBreathPressure'])
-    # line += '0x{:08X},'.format(hs_serial)
     line += '{:8d},'.format(hs_serial)
-    line += '{},'.format(HandsetState(status_lookup['ucStaState']).name)
-    line += '{}'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
-    # line += '{}'.format(CellHeatLevel(status_lookup['ucUtlCellHeatLevel']).name)
+    # line += '{},'.format(HandsetState(status_lookup['ucStaState']).name)
+    # line += '{}'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
     print(line)
 
     if capturing:
         print(line, file=log)
 
-    # trailing_count = 0
-    # if status_lookup['ucStaState'] in (HandsetState.STA_BLOWING, HandsetState.STA_WAIT_FOR_BLOW):
-    #     trailing_count = 10
-    #     print(line, file=log)
-    #
-    # if status_lookup['ucStaState'] in (HandsetState.STA_INIT_ABORT_DISP_WAIT, HandsetState.STA_ABORT_DISP_WAIT):
-    #     if trailing_count > 0:
-    #         trailing_count -= 1
-    #         print(line, file=log)
+
+def new_poll(blow_number, interval=1):
+    global blow_rec
+
+    blow_number = 6 - blow_number
+    if blow_number not in blow_rec:
+        blow_rec[blow_number] = []
+
+    incoming_packet = handset_uut.cmd_get_status(interval)
+    if not incoming_packet:
+        return
+
+    # get the format of the status packet
+    preamble = incoming_packet[PREAMBLE]
+    layout_ver, *_ = struct.unpack('<B', preamble[4:5])
+
+    # extract relevant data from packet
+    block = incoming_packet[BLOCK]
+    status_lookup = create_status_dict(block, layout_version=layout_ver)
+    hs_serial, *_ = struct.unpack('<L',  incoming_packet[PKT_PREAMBLE][5:9])
+
+    # line = '{0:%H:%M:%S.%f},'.format(datetime.datetime.now())
+    timestamp = datetime.datetime.now()
+    line = '{:%H:%M:%S}.{:03d},'.format(timestamp, int(timestamp.microsecond / 1000))
+    line += '{:8d},'.format(status_lookup['iCurrentBreathPressure'])
+    line += '{:8d},'.format(hs_serial)
+    # line += '{},'.format(HandsetState(status_lookup['ucStaState']).name)
+    # line += '{}'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
+    print(line)
+
+    blow_rec[blow_number].append(status_lookup['iCurrentBreathPressure'])
 
 
 def create_status_dict(block, layout_version=0):
@@ -148,7 +191,8 @@ def handle_keystrokes(forced_key=None):
 
 
 def closeout():
-    # global log
+    # write out all results
+    out_to_file()
     print('Closing log files and exiting.')
     log.close()
     handset_uut.close()
@@ -184,10 +228,10 @@ def main():
         sys.exit(3)
 
     # setup results logging
-    log = open(sys.argv[2]+'.csv', mode='a', buffering=1)
+    # log = open(sys.argv[2]+'.csv', mode='a', buffering=1)
 
-    legend = 'time,BreathPressure,S/N,HandsetState,HeaterState'
-    print(legend, file=log)
+    # legend = 'time,BreathPressure,S/N,HandsetState,HeaterState'
+    # print(legend, file=log)
 
     last_capture_state = capturing
     relay_closed = False
@@ -200,7 +244,7 @@ def main():
             if paused:
                 continue
             if capturing:
-                poll(.039)
+                new_poll(total_blows, .039)
             if relay_closed and delay_to_open:
                 delay_to_open -= 1
             elif relay_closed:
