@@ -25,7 +25,7 @@ key_help = {'a': 'Alcohol Test request',
             }
 ALL_OFF = b'\000'
 RELAY_ON = b'\001'
-TEST_BLOWS = 4
+TEST_BLOWS = 6
 
 
 def hex_dump(data):
@@ -112,7 +112,7 @@ def new_poll(blow_number, interval=1):
     timestamp = datetime.datetime.now()
     line = '{:%H:%M:%S}.{:03d},'.format(timestamp, int(timestamp.microsecond / 1000))
     line += '{:8d},'.format(status_lookup['iCurrentBreathPressure'])
-    line += '{:8d},'.format(hs_serial)
+    line += '{:8d}'.format(hs_serial)
     # line += '{},'.format(HandsetState(status_lookup['ucStaState']).name)
     # line += '{}'.format(HeaterState(status_lookup['ucStaHeaterState']).name)
     print(line)
@@ -197,8 +197,8 @@ def handle_keystrokes(forced_key=None):
 def closeout():
     # write out all results
     out_to_file()
-    print('Closing log files and exiting.')
-    log.close()
+    # print('Closing log files and exiting.')
+    # log.close()
     handset_uut.close()
     my_relay.close()
     sys.exit(1)
